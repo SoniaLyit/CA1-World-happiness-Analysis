@@ -270,7 +270,7 @@ hist(happy_comp_year$Health , main = "Healthy_Life_Expectancy" , col = 'green')
 
 plot(happy_comp_year$GDP, happy_comp_year$Health ,
      xlab = "GDP_Per_Capita" , ylab = "Healthy_Life_Expectancy" )
-
+# Statical Method for Non Parametric data
 cor.test(happy_comp_year$GDP, happy_comp_year$Health, method = "kendall")
 
 # p-value is 2 x 10^-16, less than 0.05. Hence alternative hypothesis is true. 
@@ -280,31 +280,33 @@ cor.test(happy_comp_year$GDP, happy_comp_year$Health, method = "kendall")
 #-------------hypothesis 5------------
 
 
-#H0- in 2020 all the happiest countries have the GDP Rate > 10
+#H0- GDP have no effect on happiness of a country
 
-#H1-There are happy countries which have GDP Rate <  10 
+#H1-GDP have big impact on Happiness Score
+#----- Data Normality Test to prove the hypothesis -----
 
-# Create a data set and filter the data of 2020 in it
-happy_2020 <-world_happiness1[world_happiness1$year == "2020", ]  
-happy_2020
+shapiro.test(world_happiness1$GDP)
 
-install.packages("psych")
-library(psych)
+# less than 0.05 not normal
+shapiro.test(world_happiness1$Happiness_Score)
+# less than 0.05, not normal
 
-pairs.panels(world_happiness1,
-             smooth = TRUE,      # If TRUE, draws loess smooths
-             scale = FALSE,      # If TRUE, scales the correlation text font
-             density = TRUE,     # If TRUE, adds density plots and histograms
-             ellipses = TRUE,    # If TRUE, draws ellipses
-             method = "spearman",# Correlation method (also "pearson" or "kendall")
-             pch = 21,           # pch symbol
-             lm = FALSE,         # If TRUE, plots linear fit rather than the LOESS (smoothed) fit
-             cor = TRUE,         # If TRUE, reports correlations
-             jiggle = FALSE,     # If TRUE, data points are jittered
-             factor = 2,         # Jittering factor
-             hist.col = 4,       # Histograms color
-             stars = TRUE,       # If TRUE, adds significance level with stars
-             ci = TRUE)          # If TRUE, adds confidence intervals
+#Plot a histogram to check the data normality
 
+hist(world_happiness1$GDP , main = "GDP_Per_Capita" , col ='red')
+hist(world_happiness1$Happiness_Score , main = "Happiness_Score" , col = 'green')
+# histogram shows that Happiness score is normally distributed
+# From the above histogram , it is observed that data is not normal for both the variables
+
+
+plot(world_happiness1$Health, world_happiness1$GDP ,
+     xlab = "Healthy_Life_Expectancy" , ylab = "GDP" )
+# Statical Method for Non Parametric data
+cor.test(world_happiness1$Health, world_happiness1$GDP, method = "pearson")
+#p-value is 2 x 10^-16, less than 0.05. Hence alternative hypothesis is true. GDP correlation value 
+# is 0.852485. Hence It is the main factor to increase the  happiness of a particular country.
+
+
+             
 
 
