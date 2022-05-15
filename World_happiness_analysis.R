@@ -1,19 +1,18 @@
-# Store file in the working directory 
-## Load World happiness dataset and replace any missing variables
-# with NA
-
 world_happiness <- read.csv("World-happiness.csv")
 head(world_happiness)
 #Check the data type of this file?
 class(world_happiness)
 str(world_happiness)
 
+
+      #------------- Step 1 ----------
+
 #The world_happiness data frame contains headings that could cause future issues when
 # referencing them , So firstly rename them 
 
 names(world_happiness)
 names(world_happiness)[1]  <- "Country"
-names(world_happiness)[3]  <- "Score"
+names(world_happiness)[3]  <- "Happiness_Score"
 names(world_happiness)[4]  <- "GDP"
 names(world_happiness)[5]  <- "Social_Support"
 names(world_happiness)[6]  <- "Health"
@@ -23,147 +22,289 @@ names(world_happiness)[10]  <- "Positive_effect"
 names(world_happiness)[11]  <- "Negative_effect"
 names(world_happiness)
 
-#Missing values dealing
-# View the records with NA
+        #------------- Step 2 ----------
+
+#Missing values dealing (View the records with NA)
 na_records <- world_happiness[!complete.cases(world_happiness),]
 na_records
-# Check the cploumns with  NA and sum the coloumnwise NA values
+
+# 241 observation have NA
+# Check the columns with  NA and sum the coloumn wise NA values
 sapply(world_happiness, function(x) sum(is.na(x)))
-sum(is.na(world_happiness)) 
-# Impute the NA values with mean because it does not affect data set too much
-nrow(world_happiness)
-#impute NA with mean in GDP
+
+# Corruption column has the maximum number of NA values so we will impute NA in this specific
+# column with the mean value
+world_happiness$Corruption[is.na(world_happiness$Corruption)] <- 
+  mean(world_happiness$Corruption, na.rm=TRUE)
+
+# Check that NA is replaced or not
+sapply(world_happiness, function(x) sum(is.na(x)))
+# Now corruption column have zero NA but other columns have the NA values which is not
+#much in numbers
+
+#Now check again for NA record
+na_records <- world_happiness[!complete.cases(world_happiness),]
+na_records
+# only 72 rows have the NA value Now
+#----- remove the remaining NA with na.omit()-------
+
 world_happiness1 <- na.omit(world_happiness)
 
 nrow(world_happiness1)
-sum(is.na(world_happiness1)) 
-world_happiness$GDP[is.na(world_happiness$GDP)] <- mean(world_happiness$GDP, na.rm=TRUE)
-#impute NA with mean in Social_support
-str(world_happiness1)
-world_happiness$Social_Support[is.na(world_happiness$Social_Support)] <- 
-mean(world_happiness$Social_Support, na.rm=TRUE)
-
-#impute NA with mean in health
-world_happiness$Health[is.na(world_happiness$Health)] <- 
-mean(world_happiness$Health, na.rm=TRUE)
-
-#impute NA with mean in GDP
-world_happiness$Freedom[is.na(world_happiness$Freedom)] <- 
-mean(world_happiness$Freedom, na.rm=TRUE)
-
-#impute NA with mean in Generosity
-world_happiness$Generosity[is.na(world_happiness$Generosity)] <- 
-mean(world_happiness$Generosity, na.rm=TRUE)
-
-#impute NA with mean in Corruption
-world_happiness$Corruption[is.na(world_happiness$Corruption)] <- 
-mean(world_happiness$Corruption, na.rm=TRUE)
-
-#impute NA with mean in Positive_effect
-world_happiness$Positive_effect[is.na(world_happiness$Positive_effect)] <- 
-mean(world_happiness$Positive_effect, na.rm=TRUE)
-
-#impute NA with mean in Negative_effect
-world_happiness$Negative_effect[is.na(world_happiness$Negative_effect)] <- 
-  mean(world_happiness$Negative_effect, na.rm=TRUE)
-
-# check again for NA , Now we can see that there is no NA now. Our data is ready for the next step
-sapply(world_happiness, function(x) sum(is.na(x)))
-
-# anothe method to View the records with NA
-na_records <- world_happiness[!complete.cases(world_happiness),]
-na_records
-library(mice)
-md.pattern(world_happiness)
-summary(world_happiness)
-
-happy_2015_data <-world_happiness[world_happiness$year == 2015, ]  
-happy_2015_data
-# Happiest score in ascending order 2015
-happy_2015_data_final <-happy_2015_data[order(happy_2015_data $Score),]
-happy_2015_data_final
+sapply(world_happiness1, function(x) sum(is.na(x)))
+sum(is.na(world_happiness1))
+# Our data is clean Now
 
 
+        #------------- Step 3 ----------
+ 
+# Create a New data frame which has the numerical variable
 
-happy_2017_data <-world_happiness[world_happiness$year == 2017, ]  
-happy_2017_data
-# Happiest score in ascending order 2017
-happy_2017_data_final <-happy_2017_data[order(happy_2017_data $Score),]
-happy_2017_data_final
+numeric_variable_list <- sapply(world_happiness1, is.numeric)
+numeric_variable_list
+numerical_data <- world_happiness1[numeric_variable_list]
 
+# Plot a correlation graph for the data set
+pairs(numerical_data, labels = colnames(numerical_data), 
+      main = "World Happiness Correlation Plot" )
+      
 
-happy_2019_data <-world_happiness[world_happiness$year == 2019, ]  
-happy_2019_data
-# Happiest score in ascending order 2019
-happy_2019_data_final <-happy_2019_data[order(happy_2019_data $Score),]
-happy_2019_data_final
+#As a result of correlation plot it is observed happiness is most 
+#closely linked to GDP, Social_support or Family,Health and Freedom.
 
-happy_2020_data <-world_happiness[world_happiness$year == 2020, ]  
-happy_2020_data
-# Happiest score in ascending order 2020
-happy_2020_data_final <-happy_2020_data[order(happy_2020_data $Score),]
-happy_2020_data_final
-library(VIM)
+# --------- hypothesis --------
+
+#-------------hypothesis 1-------------
+
+#H0-  log gdp has no impact on positive happiness
+#H1- log gdp has impact on positive happiness 
+
+# Data Normality Test
+#1. By Shapiro Test
+#2. By QQ Norm
+
+shapiro.test(world_happiness1$GDP)
+# less than 0.05 not normal
+
+shapiro.test(world_happiness1$Positive_effect)
+# less than 0.05, not normal
+ 
+#2. BY QQ Plot
+opar <- par(no.readonly = TRUE)
+par(mfrow= c(1,2))
+#QQ Plot for GDP
+qqnorm(world_happiness1$GDP)
+qqline(world_happiness1$GDP , col = "red")
+#QQ plot for Positive_effect
+qqnorm(world_happiness1$Positive_effect)
+qqline(world_happiness1$Positive_effect , col = "red")
+# points in the plot doesn't fall along a straight diagonal line ,
+#Data is not Normal for both the variables
 
 
 
-# Creates the plot
-install.packages("ggplot2 2.2.1.9000")
-install.packages("ggplot2")
-# Colour each chart point witha colour palette
-install.packages("viridis")
-library(ggplot2)
-library(ggplot2)
-library(viridis)
-install.packages("tibble")
-library(tibble)
+plot(world_happiness1$GDP, world_happiness1$Positive_effect , 
+     xlab = "GDP", ylab = "Positive_effect" )
+
+cor.test(world_happiness1$GDP, world_happiness1$Positive_effect, method = 'kendall')
+
+# p-value is 2 x 10^-16, less than 0.05. Hence alternative hypothesis is true. 
+# GDP has significant impact on positive effect measurement
+
+
+#-------------hypothesis 2-------------
+
+#H0-  Social support has no impact on Happiness_Score
+#H1- social support impact on Happiness_Score
+
+# Check the Normality of dependent and independent variables
+# Apply shapiro  test (First Way)
+
+shapiro.test(numerical_data$Social_Support)
+shapiro.test(numerical_data$Happiness_Score)
+#If the p-value of the test is
+#greater than α = .05, then the data is assumed to be normally distributed.
+# p value for Social_support is less than 0.05, So it is not normal
+#P_value for Happiness_Score is > 0.05 , So it is Normaly distributed
+
+# Create a histogram to check the normality (Second Way)
+opar <- par(no.readonly = TRUE)
+par(mfrow= c(1,2))
+hist(numerical_data$Social_Support , main = "Social Support" , col ='red', xlab = "social support")
+
+hist(numerical_data$Happiness_Score , main = "Happiness_Score" , col ='green' , xlab = "Happiness_score")
+# histogram is roughly “bell-shaped”, So data is assumed to be normally
+#distributed for Happiness_Score
 
 opar <- par(no.readonly = TRUE)
-par(mfrow = c(1, 3))
+par(mfrow= c(1,1))
+plot(world_happiness1$Social_Support, world_happiness1$Happiness_Score ,
+                xlab = "Social Support" , ylab = "Happiness Score" )
 
-hist(happy_2015_data_final$Score, main = "Happiness Score 2015", xlab = "")
-hist(happy_2017_data_final$Score, main = "Happiness Score 2017", xlab = "")
-# it is concluded that countries is more happier in 2017 as compare to 2015.
+cor.test(world_happiness1$Social_Support, world_happiness1$Happiness_Score, method = 'pearson')
 
+# p-value is 2 x 10^-16, less than 0.05. Hence alternative hypothesis is true. 
+# Social Support has significant impact on Happiness Score
+
+ 
+#---------Hypothesis -3 ------
+# H0 - score between India and Afghanistan
+# H1 - Happiness in India more than Afghanistan
+
+
+happy_afghan <-world_happiness1[world_happiness1$Country == "Afghanistan", ]  
+happy_afghan
+
+happy_ind <-world_happiness1[world_happiness1$Country == "India", ]  
+
+data_com <- rbind(happy_afghan, happy_ind)
+install.packages("ggpubr")
+library(ggpubr)
+ggboxplot(data_com, x = "Country", y = "Happiness_Score")
+# Happiness Score of India is greater than Afghanistan
+
+
+# H0- No difference in score between India and Afghanistan
+# H1- Happiness in India more than Afghanistan
+
+
+shapiro.test(data_com$Score)
+# data is normal
+
+t.test(Score ~ Country)
+
+# p value less than 0.05, hence alternative hypothesis true
+
+
+
+# Comparison  Of Happiness_Score across different countries in different years
+
+# Create a data set which will store the happiness data of year 2015 
+
+happy_2015 <-world_happiness1[world_happiness1$year == "2015", ]  
+happy_2015
+#Correlation works for only numeric data , So create a data frame which store only numeric
+#values from the data set.
+numeric_variable_list_2015 <- sapply(happy_2015, is.numeric)
+numeric_variable_list_2015
+numerical_data <- happy_2015[numeric_variable_list_2015]
+
+# Using the default pairs() option first
+# to examine correlations between variables in year 2015 
+
+pairs(numerical_data, labels = colnames(numerical_data), 
+      main = "World Happiness Correlation Plot 2015")
+
+# Create a data set which will store the happiness data of year 2017
+happy_2017 <-world_happiness1[world_happiness1$year == "2017", ]  
+happy_2017
+#Correlation works for only numeric data , So create a data frame which store only numeric
+#values from the data set.
+numeric_variable_list_2017 <- sapply(happy_2017, is.numeric)
+numeric_variable_list_2017
+numerical_data_2017 <- happy_2017[numeric_variable_list_2017]
+
+# Using the default pairs() option first
+# to examine correlations between variables in year 2015 
+
+pairs(numerical_data, labels = colnames(numerical_data), 
+      main = "World Happiness Correlation Plot 2015")
+
+happy_2019 <-world_happiness1[world_happiness1$year == "2019", ]  
+happy_2019
+
+# from the above correlation plot of the both years 2015 and 2017 and 2019
+#it is observed that Happiness score is highly correlated with
+# GDP. Some other Factors like Social_support , Health and Freedom also have strong relationship
+# with Happiness_Score.
+
+
+
+
+# Firstly merge the data of year 2015,2017 and 2019
+happy_comp_year <- rbind(happy_2015, happy_2017, happy_2019)
+happy_comp_year
+# Arrange the data Score Wise
+happy_comp_year[order(happy_comp_year$Happiness_Score),]
+#Change the year as a factor
+
+happy_comp_year$year <- as.factor(happy_comp_year$year)
+
+install.packages("ggpubr")
+library(ggpubr)
 opar <- par(no.readonly = TRUE)
-par(mfrow = c(1, 3))
-hist(happy_2019_data_final$Score, main = "Happiness Score 2019", xlab = "")
-hist(happy_2020_data_final$Score, main = "Happiness Score 2020", xlab = "")
-# it is concluded that countries is more happier in 2019 as compare to 2017
+par(mfrow= c(1,4))
+ggboxplot(happy_comp_year, x = "year", y = "Happiness_Score")
 
-# --------------------------------------------------------------------------------------
-# Examinig data in more detail
-# --------------------------------------------------------------------------------------
+# plot box shows that people are more happier in 2019 as compare to 2015 and 2017
 
-# We can examine the correlations between all of the variables
-#within the data frame
+library(lattice)
+histogram(~Happiness_Score | year, 
+          data = happy_comp_year, 
+          main = "Year Wise Comparision of Happiness Score", 
+          xlab = "Happiness Score", 
+          ylab = "Number Of Countries")
+# It is observed from the histogram that people are more happier in 2019 as 
+#compare to 2015 and 2017
 
-variables_of_interest <- c("GDP", 
-                           "Corruption", 
-                           "Freedom", 
-                           
-pairs(happy_2015_data_final[variables_of_interest])
-
-# Reset par values
-par(opar)
-plot <- ggplot(happy_2015_data_final,
-               aes(x = GDP, y = Corruption, color = Proportion)
-plot <- plot + stat_smooth(method = "lm", col = "darkgrey", se = FALSE)
-plot <- plot + scale_color_viridis()
-plot <- plot + geom_point()
-print(plot)
-
-par(mfrow = c(1, 1))
-install.packages("corrplot")
-library(corrplot)
-# tl.col refers to text colour
-# tl.cex refers to text size
-corrplot(corr = cor(happy_2015_data_final), tl.col = "Score", tl.cex = 0.9)
+#-------------hypothesis 4------------
 
 
+#H0- Healthy Life Expectancy is not affected by the GDP growth of a country (2015,2017,2019)
+
+#H1-Healthy Life Expectancy is increasing by increase in GDP
+
+#----- Data Normality Test to prove the hypothesis -----
+
+shapiro.test(happy_comp_year$GDP)
+# less than 0.05 not normal
+shapiro.test(happy_comp_year$Health)
+# less than 0.05, not normal
+
+#Plot a histogram to check the data normality
+
+hist(happy_comp_year$GDP , main = "GDP_Per_Capita" , col ='red')
+hist(happy_comp_year$Health , main = "Healthy_Life_Expectancy" , col = 'green')
+# From the above histogram , it is observed that data is not normal for both the variables
 
 
+plot(happy_comp_year$GDP, happy_comp_year$Health ,
+     xlab = "GDP_Per_Capita" , ylab = "Healthy_Life_Expectancy" )
 
+cor.test(happy_comp_year$GDP, happy_comp_year$Health, method = "kendall")
+
+# p-value is 2 x 10^-16, less than 0.05. Hence alternative hypothesis is true. 
+# Healthy Life Expectancy is increasing by increase in GDP 2015,2017 and 2019
+
+
+#-------------hypothesis 5------------
+
+
+#H0- in 2020 all the happiest countries have the GDP Rate > 10
+
+#H1-There are happy countries which have GDP Rate <  10 
+
+# Create a data set and filter the data of 2020 in it
+happy_2020 <-world_happiness1[world_happiness1$year == "2020", ]  
+happy_2020
+
+install.packages("psych")
+library(psych)
+
+pairs.panels(world_happiness1,
+             smooth = TRUE,      # If TRUE, draws loess smooths
+             scale = FALSE,      # If TRUE, scales the correlation text font
+             density = TRUE,     # If TRUE, adds density plots and histograms
+             ellipses = TRUE,    # If TRUE, draws ellipses
+             method = "spearman",# Correlation method (also "pearson" or "kendall")
+             pch = 21,           # pch symbol
+             lm = FALSE,         # If TRUE, plots linear fit rather than the LOESS (smoothed) fit
+             cor = TRUE,         # If TRUE, reports correlations
+             jiggle = FALSE,     # If TRUE, data points are jittered
+             factor = 2,         # Jittering factor
+             hist.col = 4,       # Histograms color
+             stars = TRUE,       # If TRUE, adds significance level with stars
+             ci = TRUE)          # If TRUE, adds confidence intervals
 
 
 
