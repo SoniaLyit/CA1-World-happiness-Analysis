@@ -29,14 +29,17 @@ na_records <- world_happiness[!complete.cases(world_happiness),]
 na_records
 # Check the cploumns with  NA and sum the coloumnwise NA values
 sapply(world_happiness, function(x) sum(is.na(x)))
- 
+sum(is.na(world_happiness)) 
 # Impute the NA values with mean because it does not affect data set too much
-
+nrow(world_happiness)
 #impute NA with mean in GDP
+world_happiness1 <- na.omit(world_happiness)
 
+nrow(world_happiness1)
+sum(is.na(world_happiness1)) 
 world_happiness$GDP[is.na(world_happiness$GDP)] <- mean(world_happiness$GDP, na.rm=TRUE)
 #impute NA with mean in Social_support
-
+str(world_happiness1)
 world_happiness$Social_Support[is.na(world_happiness$Social_Support)] <- 
 mean(world_happiness$Social_Support, na.rm=TRUE)
 
